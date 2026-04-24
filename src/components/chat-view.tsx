@@ -55,19 +55,21 @@ export default function ChatView({ user, onLogout }: { user: any; onLogout: () =
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'messages',
         filter: `ticket_id=eq.${activeTicket.id}`
-      }, async (payload) => {
+      }, async (payload: any) => {
         const { data } = await supabase
+
           .from('messages')
           .select('*, profiles(*)')
           .eq('id', payload.new.id)
           .single();
         if (data) {
-          setMessages(prev => {
+          setMessages((prev: any[]) => {
             if (prev.find(m => m.id === data.id)) return prev;
             return [...prev, data];
           });
           setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
         }
+
 
       })
       .subscribe();
@@ -94,9 +96,10 @@ export default function ChatView({ user, onLogout }: { user: any; onLogout: () =
       if (updateError) {
         console.error('Reopen failed:', updateError);
       } else {
-        setActiveTicket(prev => ({ ...prev, status: 'open' }));
-        setTickets(prev => prev.map(t => t.id === activeTicket.id ? { ...t, status: 'open' } : t));
+        setActiveTicket((prev: any) => ({ ...prev, status: 'open' }));
+        setTickets((prev: any[]) => prev.map(t => t.id === activeTicket.id ? { ...t, status: 'open' } : t));
       }
+
     }
 
 

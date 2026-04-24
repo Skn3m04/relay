@@ -57,14 +57,16 @@ export default function InboxView({ user, onLogout }: { user: any; onLogout: () 
     channelRef.current?.unsubscribe();
     channelRef.current = supabase
       .channel(`inbox-${selected.id}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `ticket_id=eq.${selected.id}` }, async (payload) => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `ticket_id=eq.${selected.id}` }, async (payload: any) => {
         const { data } = await supabase.from('messages').select('*, profiles(*)').eq('id', payload.new.id).single();
+
         if (data) {
-          setMessages(prev => {
+          setMessages((prev: any[]) => {
             if (prev.find(m => m.id === data.id)) return prev;
             return [...prev, data];
           });
         }
+
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
       })
 
@@ -131,9 +133,10 @@ export default function InboxView({ user, onLogout }: { user: any; onLogout: () 
       alert('Failed to resolve ticket: ' + error.message);
     } else {
       // Update local state immediately
-      setTickets(prev => prev.map(t => t.id === selected.id ? { ...t, status: 'resolved' } : t));
+      setTickets((prev: any[]) => prev.map(t => t.id === selected.id ? { ...t, status: 'resolved' } : t));
       setSelected(null);
     }
+
   };
 
 
