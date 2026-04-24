@@ -156,8 +156,8 @@ export default function ChatView({ user, onLogout }: { user: any; onLogout: () =
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#050507] text-white">
-      {/* Sidebar */}
-      <aside className="w-80 flex-shrink-0 flex flex-col border-r border-white/10 bg-white/[0.02]">
+      {/* Sidebar - Hidden on mobile if a ticket is selected */}
+      <aside className={`${activeTicket ? 'hidden md:flex' : 'flex'} w-full md:w-80 flex-shrink-0 flex-col border-r border-white/10 bg-white/[0.02]`}>
         <div className="p-4 border-b border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center font-bold text-indigo-400">
@@ -165,12 +165,13 @@ export default function ChatView({ user, onLogout }: { user: any; onLogout: () =
             </div>
             <p className="text-sm font-bold truncate max-w-[120px]">{user.full_name}</p>
           </div>
-          <button onClick={onLogout} className="text-white/20 hover:text-red-400 transition-colors">
+          <button onClick={onLogout} className="text-white/20 hover:text-red-400 transition-colors p-2">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
           </button>
         </div>
+
 
         <div className="flex p-2 gap-2 bg-white/[0.02]">
           {(['open', 'resolved'] as const).map(t => (
@@ -203,24 +204,32 @@ export default function ChatView({ user, onLogout }: { user: any; onLogout: () =
         </div>
       </aside>
 
-      {/* Main Chat */}
-      <main className="flex-1 flex flex-col bg-black/20">
+      {/* Main Chat Area */}
+      <main className={`${!activeTicket ? 'hidden md:flex' : 'flex'} flex-1 flex flex-col`}>
         {!activeTicket ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-white/20">
-            <svg className="w-16 h-16 mb-4 opacity-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-            <p className="text-sm font-bold">Select a request to view conversation</p>
+          <div className="flex-1 flex flex-col items-center justify-center text-white/10 p-8 text-center">
+            <p className="text-sm font-bold uppercase tracking-[0.2em] mb-2 opacity-50">Pulse Hub</p>
+            <p className="text-[10px]">Select a ticket or create a new one to begin</p>
           </div>
         ) : (
           <>
-            <header className="p-4 border-b border-white/10 bg-white/[0.01] flex items-center justify-between">
-              <div>
-                <h2 className="text-base font-bold">{activeTicket.subject}</h2>
-                <p className="text-[10px] text-white/40">ID: {activeTicket.id.slice(0,8)}</p>
-              </div>
-              <div className="flex items-center gap-2">
-                 <span className="text-[11px] font-bold text-white/40">{activeTicket.status}</span>
+            <header className="p-4 border-b border-white/10 bg-white/[0.01] flex items-center justify-between sticky top-0 z-10 backdrop-blur-md">
+              <div className="flex items-center gap-3">
+                <button onClick={() => setActiveTicket(null)} className="flex items-center justify-center p-2 -ml-2 text-indigo-400 hover:text-indigo-300 transition-colors bg-indigo-500/10 rounded-lg">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  <span className="ml-1 text-[10px] font-bold uppercase tracking-wider md:hidden">Back</span>
+                </button>
+
+                <div>
+                  <h2 className="text-sm font-bold">{activeTicket.subject}</h2>
+                  <p className="text-[10px] text-white/40 uppercase tracking-widest flex items-center gap-2">
+                    ID: {activeTicket.id.split('-')[0]}
+                    <span className={`w-1.5 h-1.5 rounded-full ${activeTicket.status === 'open' ? 'bg-indigo-400 animate-pulse' : 'bg-green-400'}`} />
+                    {activeTicket.status}
+                  </p>
+                </div>
               </div>
             </header>
 
