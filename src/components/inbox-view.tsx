@@ -328,7 +328,7 @@ export default function InboxView({ user, onLogout }: { user: any; onLogout: () 
       {/* Background grid */}
       <div className="fixed inset-0 bg-[linear-gradient(rgba(168,85,247,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(168,85,247,0.03)_1px,transparent_1px)] bg-[size:50px_50px] pointer-events-none z-0" />
       {/* Sidebar — full width on mobile, hidden when chat/insights is open on mobile */}
-      <aside className={`${selected || activeTab === 'insights' ? 'hidden md:flex' : 'flex'} w-full md:w-80 border-r border-purple-500/10 flex-col bg-[#06030f]/80 backdrop-blur-xl relative z-10 h-screen md:h-auto`}>
+      <aside className={`${selected || activeTab === 'insights' ? 'hidden md:flex' : 'flex'} w-full md:w-80 border-r border-purple-500/10 flex-col bg-[#06030f]/80 backdrop-blur-xl relative z-10 h-screen min-h-0`}>
         <div className="p-4 border-b border-purple-500/10 flex items-center justify-between">
           <div>
             <p className="text-sm font-bold">{user.full_name}</p>
@@ -457,7 +457,7 @@ export default function InboxView({ user, onLogout }: { user: any; onLogout: () 
           <span className="text-[9px] text-white/20 font-bold">{displayTickets.length} Tickets</span>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto min-h-0">
           {displayTickets.map(t => {
             const slaColor = getSLAColor(t.sla_deadline, t.status);
             const isBreached = slaColor === 'bg-red-500';
