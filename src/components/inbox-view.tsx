@@ -327,8 +327,8 @@ export default function InboxView({ user, onLogout }: { user: any; onLogout: () 
     <div className="flex flex-col md:flex-row h-screen overflow-hidden bg-[#030108] text-white">
       {/* Background grid */}
       <div className="fixed inset-0 bg-[linear-gradient(rgba(168,85,247,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(168,85,247,0.03)_1px,transparent_1px)] bg-[size:50px_50px] pointer-events-none z-0" />
-      {/* Sidebar — full width on mobile, hidden when chat is open on mobile */}
-      <aside className={`${selected ? 'hidden md:flex' : 'flex'} w-full md:w-80 border-r border-purple-500/10 flex-col bg-[#06030f]/80 backdrop-blur-xl relative z-10`}>
+      {/* Sidebar — full width on mobile, hidden when chat/insights is open on mobile */}
+      <aside className={`${selected || activeTab === 'insights' ? 'hidden md:flex' : 'flex'} w-full md:w-80 border-r border-purple-500/10 flex-col bg-[#06030f]/80 backdrop-blur-xl relative z-10 h-screen md:h-auto`}>
         <div className="p-4 border-b border-purple-500/10 flex items-center justify-between">
           <div>
             <p className="text-sm font-bold">{user.full_name}</p>
@@ -500,8 +500,8 @@ export default function InboxView({ user, onLogout }: { user: any; onLogout: () 
         </div>
       </aside>
 
-      {/* Main Inbox — full screen on mobile when a ticket is selected */}
-      <main className={`${selected ? 'flex' : 'hidden md:flex'} flex-1 flex-col overflow-hidden relative z-10`}>
+      {/* Main Inbox — full screen on mobile when a ticket is selected or insights active */}
+      <main className={`${selected || activeTab === 'insights' ? 'flex' : 'hidden md:flex'} flex-1 flex-col overflow-hidden relative z-10`}>
         {/* Dashboard Bar */}
         <div className="grid grid-cols-2 md:grid-cols-4 items-center bg-[#06030f]/60 border-b border-purple-500/10 backdrop-blur-xl">
           <div className="py-3 md:py-4 border-r border-b md:border-b-0 border-purple-500/10 flex flex-col items-center group hover:bg-purple-500/5 transition-colors cursor-default">
@@ -548,7 +548,7 @@ export default function InboxView({ user, onLogout }: { user: any; onLogout: () 
         </div>
 
         {activeTab === 'insights' ? (
-          <InsightsView />
+          <InsightsView onBack={() => setActiveTab('inbox')} />
         ) : !selected ? (
           <div className="flex-1 flex flex-col items-center justify-center text-white/10">
             <p className="text-sm font-bold hidden md:block">Select a ticket to respond</p>
