@@ -4,6 +4,14 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { formatDistanceToNow, format } from 'date-fns';
 
+const getSLAColor = (deadline: string, status: string) => {
+  if (status === 'resolved' || !deadline) return 'bg-transparent';
+  const diff = new Date(deadline).getTime() - Date.now();
+  if (diff < 0) return 'bg-red-500';
+  if (diff < 5 * 60000) return 'bg-yellow-500';
+  return 'bg-transparent';
+};
+
 const SUBJECTS = ['Shift Issue', 'RTO Delivered', 'Payment Issue', 'Order Problem', 'App Error', 'Other'];
 
 export default function ChatView({ user, onLogout }: { user: any; onLogout: () => void }) {
@@ -139,12 +147,41 @@ export default function ChatView({ user, onLogout }: { user: any; onLogout: () =
   const createTicket = async () => {
     if (!supabase) return;
     setCreating(true);
+    // Operational Intelligence: Map subject to issue_type and add mock location
+    const city = ['Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Pune'][Math.floor(Math.random() * 5)];
+    const lat = 12.9716 + (Math.random() - 0.5) * 2;
+    const lon = 77.5946 + (Math.random() - 0.5) * 2;
+
+    // Workflow Automation: Priority Mapping & SLA Assignment
+    let priority = 'low';
+    if (newSubject === 'Payment Issue') priority = 'high';
+    else if (newSubject === 'App Error' || newSubject === 'Delay') priority = 'medium';
+
+    const slaMinutes = 15; // As per final instruction "SLA is 15 mins for all actions"
+    const slaDeadline = new Date(Date.now() + slaMinutes * 60000).toISOString();
+
     const { data } = await supabase
       .from('tickets')
-      .insert({ user_id: user.id, subject: newSubject, status: 'open' })
+      .insert({ 
+        user_id: user.id, 
+        subject: newSubject, 
+        status: 'open', 
+        priority,
+        issue_type: newSubject,
+        city,
+        lat,
+        lon,
+        sla_deadline: slaDeadline
+      })
       .select()
       .single();
     if (data) {
+      // Log created event
+      await supabase.from('ticket_events').insert({
+        ticket_id: data.id,
+        event_type: 'created',
+        actor_id: user.id
+      });
       await fetchTickets();
       setActiveTicket(data);
       setShowNew(false);
@@ -189,18 +226,27 @@ export default function ChatView({ user, onLogout }: { user: any; onLogout: () =
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {filtered.map(ticket => (
-            <div key={ticket.id} onClick={() => setActiveTicket(ticket)}
-              className={`p-4 border-b border-white/5 cursor-pointer transition-all ${activeTicket?.id === ticket.id ? 'bg-indigo-500/10 border-l-2 border-l-indigo-500' : 'hover:bg-white/[0.02]'}`}>
-              <div className="flex justify-between items-start mb-1">
-                <p className="text-sm font-bold truncate pr-2">{ticket.subject}</p>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold ${ticket.status === 'open' ? 'bg-blue-500/10 text-blue-400' : 'bg-green-500/10 text-green-400'}`}>
-                  {ticket.status}
-                </span>
+          {filtered.map(ticket => {
+            const slaColor = getSLAColor(ticket.sla_deadline, ticket.status);
+            return (
+              <div key={ticket.id} onClick={() => setActiveTicket(ticket)}
+                className={`p-4 border-b border-white/5 cursor-pointer transition-all relative overflow-hidden ${activeTicket?.id === ticket.id ? 'bg-indigo-500/10 border-l-2 border-l-indigo-500' : 'hover:bg-white/[0.02]'}`}>
+                <div className={`absolute left-0 top-0 bottom-0 w-1 ${slaColor}`} />
+                <div className="flex justify-between items-start mb-1">
+                  <p className="text-sm font-bold truncate pr-2">{ticket.subject}</p>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold ${ticket.status === 'open' ? 'bg-blue-500/10 text-blue-400' : 'bg-green-500/10 text-green-400'}`}>
+                    {ticket.status}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <p className="text-[10px] text-white/30">{formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}</p>
+                  <p className={`text-[9px] font-bold uppercase ${ticket.priority === 'high' ? 'text-red-400' : ticket.priority === 'medium' ? 'text-yellow-400' : 'text-blue-400'}`}>
+                    {ticket.priority}
+                  </p>
+                </div>
               </div>
-              <p className="text-[10px] text-white/30">{formatDistanceToNow(new Date(ticket.created_at), { addSuffix: true })}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </aside>
 

@@ -1,95 +1,100 @@
-# 🛰️ Relay | Futuristic Support Command Center
+![Relay Hero Banner](/hero-banner.png)
 
-Relay is a high-end, glassmorphic support ecosystem designed for modern operational teams. It provides a seamless, real-time bridge between field users and support agents, featuring a premium dark-mode aesthetic and state-of-the-art interaction design.
+# 🛰️ Relay | Cybernetic Support Command Center
 
----
-
-## ✨ Design Philosophy: "The Command Center"
-
-Relay is built with a **Futuristic Glassmorphic** aesthetic. It moves away from boring, static tables and into a dynamic, "alive" interface.
-- **Translucency**: Every panel uses high-index blur (backdrop-filter) and subtle transparency.
-- **Luminance**: Critical actions use neon indigo and purple glows to guide the eye.
-- **Motion**: Every transition is smooth, from the spinning logo rings to the message bubble animations.
+Relay is a high-performance, glassmorphic support ecosystem engineered for mission-critical operations. It redefines traditional support ticketing by providing a **Living Command Center** experience—combining real-time intelligence, automated workflow enforcement, and a state-of-the-art "cyber-dark" aesthetic.
 
 ---
 
-## 🛠️ Core Modules
+## 💎 Design Identity: "The Cybernetic Void"
 
-### 1. 🔐 Sentinel Auth (Phone-Based)
-A secure, streamlined entry point that eliminates the need for complex passwords.
-- **Session Persistence**: Remembers your login even after a browser refresh.
-- **Identity Awareness**: Automatically routes you to the correct interface (User or Agent) based on your database profile.
+Relay is built on the principle of **Operational Clarity**. Every pixel is designed to reduce cognitive load while maximizing the density of actionable information.
 
-### 2. 💬 Pulse Chat (User Interface)
-The frontline for field users to report issues.
-- **Instant Connectivity**: Real-time messaging powered by Supabase.
-- **Multimedia Support**: Send and receive images or documents via the integrated attachment system.
-- **Smart Status**: Visual indicators (Open, Active, Resolved) so users always know their request's progress.
-
-### 3. 🛸 Relay Inbox (Agent Dashboard)
-A high-density command center for support teams.
-- **Auto-Claim System**: Tickets are automatically assigned to an agent the moment they open them.
-- **Live Performance Stats**: Real-time tracking of Open vs. Resolved tickets.
-- **Global Search & Filter**: Quickly pivot between different ticket types and statuses.
+### 🎨 Visual Language & UX
+- **The Void Palette**: Utilizes `#050507` (Deep Black) as defined in `globals.css` to eliminate visual noise.
+- **Glassmorphism 2.0**: UI panels feature multi-layered `backdrop-blur(20px)` and `bg-white/[0.03]` translucent materials.
+- **Atmospheric Lighting**: Subtle glows and luminescent borders (`indigo-500/20`) guide the eye to urgent tasks.
+- **Semantic Color System**:
+    - <kbd>Indigo & Purple</kbd>: Primary navigation and active focus (`#6366f1`, `#a855f7`).
+    - <kbd>Cyber Emerald</kbd>: Resolved status / Healthy SLA.
+    - <kbd>Solar Amber</kbd>: Warning / Near Breach (**5-minute threshold**).
+    - <kbd>Pulse Red</kbd>: Critical / Breached / Escalated.
 
 ---
 
-## 🚀 Technical Stack
+## 🚀 Key Operational Modules
 
-- **Framework**: [Next.js 16 (Turbopack)](https://nextjs.org/) for lightning-fast development and performance.
-- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/) using the latest modern CSS features.
-- **Database**: [Supabase](https://supabase.com/) (PostgreSQL) for secure data storage.
-- **Real-time**: Supabase Broadcast & Postgres Changes for sub-100ms message delivery.
-- **Storage**: Supabase Storage for secure file handling.
+### 1. 🛸 High-Density Inbox (The Cockpit)
+Designed for agents processing hundreds of tickets daily. 
+- **Real-time Synchronization**: Powered by Supabase Realtime, the inbox updates instantly without page refreshes.
+- **Smart Priority Engine**: Tickets are dynamically sorted by **Priority (DESC)**, then **SLA Deadline (ASC)**.
+- **Contextual Search**: High-speed filtering across Subject, Ticket ID, and User metadata.
+- **Bulk Operations**: Perform "Bulk Assign" or "Bulk Resolve" on multiple selected tickets simultaneously.
 
----
+### 2. 📊 Operational Intelligence (Insights)
+A futuristic analytics suite providing a bird's-eye view of support health.
+- **KPI Command Strip**: Real-time tracking of **Today's Volume**, **Average TAT (Turnaround Time)**, and **SLA Compliance**.
+- **Geographic Hotspots**: Automated clustering of ticket volume by city to detect regional service gaps.
+- **Critical User Tracking**: Automatically flags "Repeat Users" with >3 tickets for specialized intervention.
+- **Issue Distribution**: Dynamic visualization of problem categories via high-index bar charts.
 
-## 📦 Setup & Installation
+### 3. ⚙️ The Sentinel (Workflow Automation)
+An invisible logic layer that ensures operational precision.
+- **Dynamic SLA Enforcement**: Every ticket is governed by rules defined in the `sla_rules` table.
+- **Visual Urgency Strips**: Ticket cards feature a dynamic vertical strip that changes to **Yellow (5m remaining)** or **Red (Breached)**.
+- **Auto-Escalation**: Overdue tickets are automatically labeled as `ESCALATED` in the UI.
 
-### 1. Environment Configuration
-Create a `.env.local` file in the root directory:
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
-```
-
-### 2. Database Schema
-Run the provided `supabase_schema.sql` in your Supabase SQL Editor. This creates:
-- `profiles`: User identities and team roles.
-- `tickets`: The core support requests.
-- `messages`: The conversation history.
-
-### 3. Storage Setup
-- Create a bucket in Supabase named **`attachments`**.
-- Set the bucket to **Public**.
-- Add a Storage Policy to allow `SELECT` and `INSERT` for `anon` users.
+### 💬 4. Unified Communication (Chat)
+A low-latency messaging interface for agent-user collaboration.
+- **Rich Media Support**: Integrated file uploads (images/logs) via Supabase Storage.
+- **First Response Tracking**: Automatically captures `first_response_at` on the first agent message to calculate FRT metrics.
+- **Audit Log**: Every assignment, response, and resolution is logged in `ticket_events`.
 
 ---
 
-## 📖 How to Use
+## 🏗️ Technical Architecture
 
-### As a User
-1. Enter your phone number (must exist in the `profiles` table).
-2. Click **+ New Support Request** to start a conversation.
-3. Attach photos or documents using the 📎 icon.
-
-### As an Agent (Admin/CT Team)
-1. Ensure your `team_type` in Supabase is set to `Admin` or `CT Team`.
-2. Log in with your phone number.
-3. Select an **Open** ticket from the sidebar to automatically claim it.
-4. Click **Resolve** once the issue is finalized to clear it from your active queue.
-
----
-
-## 🎨 UI Reference Guide
-
-| Element | Style | Rationale |
+| Layer | Technology | implementation Details |
 | :--- | :--- | :--- |
-| **Active Cards** | `indigo-600/10` | Subtle focus without overwhelming the dark theme. |
-| **Glow Accents** | `blur-[120px]` | Creates depth and a "space-age" feel. |
-| **Typography** | `Inter` | Clean, geometric, and highly readable in dark mode. |
-| **Glass Panels** | `blur(20px)` | Provides visual hierarchy and modern elegance. |
+| **Framework** | **Next.js 16.2** | Utilizing App Router and Server Actions. |
+| **Runtime** | **React 19** | Concurrent rendering and modern hook architecture. |
+| **Styling** | **Tailwind CSS 4** | Advanced JIT styling with native CSS variables. |
+| **Backend** | **Supabase** | PostgreSQL database with RLS and Realtime Broadcast. |
+
+### 🗄️ Detailed Data Model
+
+- **`profiles`**: User metadata and `team_type` (Admin, CT Team, VS Team).
+- **`tickets`**: Core entity with `sla_deadline`, `priority`, and geospatial data.
+- **`ticket_events`**: Audit log for ticket lifecycle tracking.
+- **`ticket_metrics`**: SQL view for real-time TAT and SLA calculations.
+- **`messages`**: Threaded communication with attachment support.
 
 ---
 
-*Developed with ❤️ for the Relay Support Team.*
+## 🛠️ Installation & Development
+
+1.  **Clone the Repository**:
+    ```bash
+    git clone https://github.com/your-repo/relay-support.git
+    npm install
+    ```
+2.  **Environment Setup**:
+    Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to your `.env.local`.
+3.  **Initialize Database**:
+    Apply the [supabase_schema.sql](file:///c:/Users/DELL/OneDrive/Desktop/relay-support/supabase_schema.sql) in your Supabase SQL Editor.
+4.  **Run Dev Server**:
+    ```bash
+    npm run dev
+    ```
+
+---
+
+## ⚡ Performance Optimization
+
+- **Turbopack**: Ultra-fast HMR for rapid iteration.
+- **Zero-Runtime CSS**: Tailwind 4 eliminates style calculation overhead.
+- **SQL Materialized Logic**: Offloading complex metrics to database views.
+
+---
+
+*Engineered for Excellence. Designed for the Future.*

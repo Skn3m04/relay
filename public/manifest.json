@@ -4,8 +4,8 @@
   "description": "Futuristic real-time support tracking.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0a0c",
-  "theme_color": "#6366f1",
+  "background_color": "#030108",
+  "theme_color": "#a855f7",
   "icons": [
     {
       "src": "/icon-192x192.png",

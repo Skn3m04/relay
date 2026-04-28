@@ -8,6 +8,10 @@ export const metadata: Metadata = {
   title: "Relay | Support Tracking",
   description: "Futuristic real-time support tracking app.",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/icon-192x192.png",
+    apple: "/icon-192x192.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
