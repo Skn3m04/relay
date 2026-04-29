@@ -68,34 +68,63 @@ CREATE TABLE messages (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Enable Row Level Security
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE tickets ENABLE ROW LEVEL SECURITY;
-ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
-ALTER TABLE ticket_events ENABLE ROW LEVEL SECURITY;
-
 -- Profiles Policies
-CREATE POLICY "Public profiles are viewable by everyone" ON profiles FOR SELECT USING (true);
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can view their own profile" ON profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Agents can view all profiles" ON profiles FOR SELECT USING (
+  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND (team_type = 'CT Team' OR team_type = 'Admin'))
+);
 CREATE POLICY "Users can update their own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
 
 -- Tickets Policies
-CREATE POLICY "Users can see their own tickets" ON tickets FOR SELECT USING (
-  user_id IN (SELECT id FROM profiles WHERE phone = (SELECT phone FROM profiles WHERE id = auth.uid()))
+ALTER TABLE tickets ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can see their own tickets" ON tickets FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Agents can see assigned or unassigned tickets" ON tickets FOR SELECT USING (
+  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND (team_type = 'CT Team' OR team_type = 'Admin'))
+  AND (assigned_to = auth.uid() OR assigned_to IS NULL)
 );
-CREATE POLICY "CT Team can see all tickets" ON tickets FOR ALL USING (
+CREATE POLICY "Admins can see all tickets" ON tickets FOR SELECT USING (
+  EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND team_type = 'Admin')
+);
+CREATE POLICY "Agents can update assigned tickets" ON tickets FOR UPDATE USING (
   EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND (team_type = 'CT Team' OR team_type = 'Admin'))
 );
 
 -- Messages Policies
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can see messages for their tickets" ON messages FOR SELECT USING (
   EXISTS (SELECT 1 FROM tickets WHERE id = messages.ticket_id AND (user_id = auth.uid() OR assigned_to = auth.uid()))
 );
 CREATE POLICY "Users can insert messages" ON messages FOR INSERT WITH CHECK (true);
 
 -- Ticket Events Policies
+ALTER TABLE ticket_events ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Agents can see all ticket events" ON ticket_events FOR SELECT USING (
   EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND (team_type = 'CT Team' OR team_type = 'Admin'))
 );
+
+-- RPC for Daily Stats (Production Optimization)
+CREATE OR REPLACE FUNCTION get_daily_ticket_stats(from_date TIMESTAMPTZ, to_date TIMESTAMPTZ)
+RETURNS TABLE (
+  date DATE,
+  total BIGINT,
+  resolved BIGINT
+) 
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    t.created_at::date as date,
+    COUNT(*) as total,
+    COUNT(*) FILTER (WHERE t.status = 'resolved') as resolved
+  FROM tickets t
+  WHERE t.created_at >= from_date AND t.created_at <= to_date
+  GROUP BY t.created_at::date
+  ORDER BY date DESC;
+END;
+$$;
 
 -- Enable Realtime
 ALTER PUBLICATION supabase_realtime ADD TABLE messages;

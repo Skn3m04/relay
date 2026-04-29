@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import ErrorBoundary from "@/components/error-boundary";
+
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -35,7 +37,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased dark">
       <body className={`${inter.className} min-h-full flex flex-col bg-[#0a0a0c] selection:bg-indigo-500/30`}>
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
       </body>
     </html>
   );

@@ -16,35 +16,15 @@ export async function GET(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  // Raw SQL query for aggregation
-  // Note: We use rpc or just fetch all and aggregate if rpc is not set up.
-  // Since we can't easily add a new RPC function, we'll fetch and aggregate in TS.
-  // In a real production app, this would be a Postgres function (RPC).
+  // Optimization: Use Postgres RPC for aggregation
+  const { data, error } = await supabase.rpc('get_daily_ticket_stats', {
+    from_date: from,
+    to_date: to
+  });
   
-  const { data, error } = await supabase
-    .from('tickets')
-    .select('created_at, status')
-    .gte('created_at', from)
-    .lte('created_at', to);
-
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Aggregate by date
-  const aggregation = data.reduce((acc: any, t: any) => {
-    const date = t.created_at.split('T')[0];
-    if (!acc[date]) {
-      acc[date] = { date, total: 0, resolved: 0 };
-    }
-    acc[date].total++;
-    if (t.status === 'resolved') {
-      acc[date].resolved++;
-    }
-    return acc;
-  }, {});
-
-  const result = Object.values(aggregation).sort((a: any, b: any) => b.date.localeCompare(a.date));
-
-  return NextResponse.json(result);
+  return NextResponse.json(data);
 }

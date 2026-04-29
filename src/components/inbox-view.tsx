@@ -37,7 +37,13 @@ export default function InboxView({ user, onLogout }: { user: any; onLogout: () 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [activeTab, setActiveTab] = useState<'inbox' | 'insights'>('inbox');
   const [metrics, setMetrics] = useState<any>(null);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const PAGE_SIZE = 20;
+
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<any>(null);
 
   const fetchMetrics = useCallback(async () => {
@@ -68,18 +74,36 @@ export default function InboxView({ user, onLogout }: { user: any; onLogout: () 
     });
   }, []);
 
-  const fetchTickets = useCallback(async () => {
+  const fetchTickets = useCallback(async (isLoadMore = false) => {
     if (!supabase) return;
-    // Smart Sorting: priority DESC, sla_deadline ASC, created_at ASC
-    const { data } = await supabase
+    const currentPage = isLoadMore ? page + 1 : 0;
+    if (isLoadMore) setLoadingMore(true);
+    else setLoadingT(true);
+
+    const { data, error } = await supabase
       .from('tickets')
       .select('*, profiles!tickets_user_id_fkey(*)')
       .order('priority', { ascending: false, nullsFirst: false })
       .order('sla_deadline', { ascending: true, nullsFirst: false })
-      .order('created_at', { ascending: true });
-    setTickets(data || []);
+      .order('created_at', { ascending: true })
+      .range(currentPage * PAGE_SIZE, (currentPage + 1) * PAGE_SIZE - 1);
+
+    if (error) {
+      console.error('Error fetching tickets:', error);
+    } else {
+      if (isLoadMore) {
+        setTickets(prev => [...prev, ...(data || [])]);
+        setPage(currentPage);
+      } else {
+        setTickets(data || []);
+        setPage(0);
+      }
+      setHasMore((data || []).length === PAGE_SIZE);
+    }
+    
     setLoadingT(false);
-  }, []);
+    setLoadingMore(false);
+  }, [page]);
 
   const fetchMessages = useCallback(async (ticketId: string) => {
     if (!supabase) return;
@@ -93,18 +117,18 @@ export default function InboxView({ user, onLogout }: { user: any; onLogout: () 
   }, []);
 
   useEffect(() => {
-    fetchTickets();
+    fetchTickets(false);
     fetchMetrics();
     
     // Live Pulse: Refresh every 60 seconds to catch SLA breaches
     const timer = setInterval(() => {
-      fetchTickets();
+      fetchTickets(false); // Refresh first page
       fetchMetrics();
     }, 60000);
 
     const sub = supabase.channel('tickets_all')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => {
-        fetchTickets();
+        fetchTickets(false); // Refresh first page on change
         fetchMetrics();
       })
       .subscribe();
@@ -113,7 +137,7 @@ export default function InboxView({ user, onLogout }: { user: any; onLogout: () 
       supabase.removeChannel(sub);
       clearInterval(timer);
     };
-  }, [fetchTickets, fetchMetrics]);
+  }, [fetchMetrics]); // Removed fetchTickets from deps to avoid infinite loops since it depends on 'page'
 
   useEffect(() => {
     if (!selected || !supabase) return;
@@ -457,47 +481,59 @@ export default function InboxView({ user, onLogout }: { user: any; onLogout: () 
           <span className="text-[9px] text-white/20 font-bold">{displayTickets.length} Tickets</span>
         </div>
 
-        <div className="flex-1 overflow-y-auto min-h-0">
-          {displayTickets.map(t => {
-            const slaColor = getSLAColor(t.sla_deadline, t.status);
-            const isBreached = slaColor === 'bg-red-500';
+          <div className="flex-1 overflow-y-auto min-h-0" ref={scrollRef}>
+            {displayTickets.map(t => {
+              const slaColor = getSLAColor(t.sla_deadline, t.status);
+              const isBreached = slaColor === 'bg-red-500';
 
-            return (
-              <div key={t.id}
-                className={`p-4 border-b border-purple-500/10 cursor-pointer transition-all relative overflow-hidden flex gap-3 ${selected?.id === t.id ? 'bg-purple-600/10' : 'hover:bg-purple-500/5'}`}>
-                
-                <div className="pt-0.5" onClick={e => e.stopPropagation()}>
-                  <input 
-                    type="checkbox" 
-                    checked={selectedIds.has(t.id)}
-                    onChange={() => toggleSelection(t.id)}
-                    className="w-4 h-4 accent-purple-500 rounded border-white/10"
-                  />
-                </div>
-
-                <div className="flex-1 min-w-0" onClick={() => setSelected(t)}>
-                  {/* SLA Strip */}
-                  <div className={`absolute left-0 top-0 bottom-0 w-1 ${slaColor}`} />
+              return (
+                <div key={t.id}
+                  className={`p-4 border-b border-purple-500/10 cursor-pointer transition-all relative overflow-hidden flex gap-3 ${selected?.id === t.id ? 'bg-purple-600/10' : 'hover:bg-purple-500/5'}`}>
                   
-                  <div className="flex justify-between items-center mb-1">
-                    <div className="flex items-center gap-2 overflow-hidden">
-                      <p className="text-xs font-bold truncate">{t.profiles?.full_name}</p>
-                      {isBreached && <span className="text-[7px] bg-red-500 text-white px-1 rounded-sm font-bold uppercase">Escalated</span>}
-                    </div>
-                    <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase flex-shrink-0 ${STATUS_STYLES[t.status]}`}>{t.status}</span>
+                  <div className="pt-0.5" onClick={e => e.stopPropagation()}>
+                    <input 
+                      type="checkbox" 
+                      checked={selectedIds.has(t.id)}
+                      onChange={() => toggleSelection(t.id)}
+                      className="w-4 h-4 accent-purple-500 rounded border-white/10"
+                    />
                   </div>
-                  <p className="text-[11px] text-white/50 truncate mb-1">{t.subject}</p>
-                  <div className="flex justify-between items-center">
-                    <p className="text-[9px] text-white/20">{formatDistanceToNow(new Date(t.created_at), { addSuffix: true })}</p>
-                    <p className={`text-[9px] font-bold uppercase ${t.priority === 'high' ? 'text-red-400' : t.priority === 'medium' ? 'text-yellow-400' : 'text-blue-400'}`}>
-                      {t.priority}
-                    </p>
+
+                  <div className="flex-1 min-w-0" onClick={() => setSelected(t)}>
+                    {/* SLA Strip */}
+                    <div className={`absolute left-0 top-0 bottom-0 w-1 ${slaColor}`} />
+                    
+                    <div className="flex justify-between items-center mb-1">
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <p className="text-xs font-bold truncate">{t.profiles?.full_name}</p>
+                        {isBreached && <span className="text-[7px] bg-red-500 text-white px-1 rounded-sm font-bold uppercase">Escalated</span>}
+                      </div>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase flex-shrink-0 ${STATUS_STYLES[t.status]}`}>{t.status}</span>
+                    </div>
+                    <p className="text-[11px] text-white/50 truncate mb-1">{t.subject}</p>
+                    <div className="flex justify-between items-center">
+                      <p className="text-[9px] text-white/20">{formatDistanceToNow(new Date(t.created_at), { addSuffix: true })}</p>
+                      <p className={`text-[9px] font-bold uppercase ${t.priority === 'high' ? 'text-red-400' : t.priority === 'medium' ? 'text-yellow-400' : 'text-blue-400'}`}>
+                        {t.priority}
+                      </p>
+                    </div>
                   </div>
                 </div>
+              );
+            })}
+            
+            {hasMore && (
+              <div className="p-4 flex justify-center">
+                <button 
+                  onClick={() => fetchTickets(true)}
+                  disabled={loadingMore}
+                  className="px-4 py-2 bg-purple-500/10 hover:bg-purple-500/20 text-[10px] font-bold uppercase tracking-widest text-purple-300 rounded-xl transition-all border border-purple-500/20 disabled:opacity-50"
+                >
+                  {loadingMore ? 'Loading...' : 'Load More Tickets'}
+                </button>
               </div>
-            );
-          })}
-        </div>
+            )}
+          </div>
       </aside>
 
       {/* Main Inbox — full screen on mobile when a ticket is selected or insights active */}
